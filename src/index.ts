@@ -32,39 +32,71 @@ registry.register(new WriteFileAgent());
 const cfg: Config = loadConfig();
 
 let plan: Plan;
-if (argv.plan) {
-  plan = store.loadPlan(path.resolve(String(argv.plan)));
-  console.log(chalk.gray(`Loaded plan: ${argv.plan}`));
-} else {
-  const goal = String(argv._[0] ?? argv.goal ?? "").trim();
-  if (!goal) {
-    console.error(chalk.red("Please provide a goal or --plan <file.yaml>"));
-    process.exit(1);
+try {
+  if (argv.plan) {
+    plan = store.loadPlan(path.resolve(String(argv.plan)));
+    console.log(chalk.gray(`Loaded plan: ${argv.plan}`));
+  } else {
+    const goal = String(argv._[0] ?? argv.goal ?? "").trim();
+    if (!goal) {
+      console.error(chalk.red("Please provide a goal or --plan <file.yaml>"));
+      process.exit(1);
+    }
+    plan = planner.build(goal);
+    const fp = store.savePlan(plan);
+    console.log(chalk.green(`Saved plan → ${fp}`));
   }
-  plan = planner.build(goal);
-  const fp = store.savePlan(plan);
-  console.log(chalk.green(`Saved plan → ${fp}`));
+
+  // Show plan summary
+  printPlan(plan);
+
+  // Execute
+  const orchestrator = new Orchestrator(registry, cfg);
+  const log = await orchestrator.run(plan);
+  const runFile = store.appendRunLog(log);
+  const updatedPlanFile = store.savePlan(plan); // persist refinements
+
+  console.log(chalk.green(`\nRun log → ${runFile}`));
+  console.log(chalk.green(`Updated plan → ${updatedPlanFile}`));
+
+} catch (error) {
+  console.error(chalk.red(`Error: ${error instanceof Error ? error.message : String(error)}`));
+  process.exit(1);
 }
 
-// Show plan summary
-printPlan(plan);
-
-// Execute
-const orchestrator = new Orchestrator(registry, cfg);
-const log = await orchestrator.run(plan);
-const runFile = store.appendRunLog(log);
-const updatedPlanFile = store.savePlan(plan); // persist refinements
-
-console.log(chalk.green(`\nRun log → ${runFile}`));
-console.log(chalk.green(`Updated plan → ${updatedPlanFile}`));
-
 function printPlan(plan: Plan) {
-  console.log(chalk.cyan(`\nGoal: ${plan.goal}`));
+  if (!plan) {
+    console.log(chalk.red("Plan is undefined"));
+    return;
+  }
+
+  console.log(chalk.cyan(`\nGoal: ${plan.goal || 'No goal specified'}`));
+  
+  if (!Array.isArray(plan.phases)) {
+    console.log(chalk.red("Plan phases is not an array"));
+    return;
+  }
+
   for (const phase of plan.phases) {
-    console.log(chalk.bold(`\n▶ ${phase.title}`));
+    if (!phase) {
+      console.log(chalk.red("Found undefined phase"));
+      continue;
+    }
+
+    console.log(chalk.bold(`\n▶ ${phase.title || 'Unnamed Phase'}`));
+    
+    if (!Array.isArray(phase.tasks)) {
+      console.log(chalk.red(`  Phase '${phase.title}' has invalid tasks property`));
+      continue;
+    }
+
     for (const t of phase.tasks) {
+      if (!t) {
+        console.log(chalk.red("  Found undefined task"));
+        continue;
+      }
       const agent = t.suggestedAgent ? chalk.gray(` [${t.suggestedAgent}]`) : "";
-      console.log(` - ${t.title}${agent}`);
+      console.log(` - ${t.title || 'Unnamed Task'}${agent}`);
     }
   }
 }
@@ -72,8 +104,19 @@ function printPlan(plan: Plan) {
 function loadConfig(): Config {
   const fp = path.resolve("tracer.config.json");
   if (fs.existsSync(fp)) {
-    const raw = fs.readFileSync(fp, "utf8");
-    return JSON.parse(raw) as Config;
+    try {
+      const raw = fs.readFileSync(fp, "utf8");
+      return JSON.parse(raw) as Config;
+    } catch (error) {
+      console.warn(chalk.yellow(`Warning: Could not parse config file ${fp}, using defaults`));
     }
-  return { maxRetries: 1, defaultAgents: { format: "formatCode", search: "searchRepo", write: "writeFile" } };
+  }
+  return { 
+    maxRetries: 1, 
+    defaultAgents: { 
+      format: "formatCode", 
+      search: "searchRepo", 
+      write: "writeFile" 
+    } 
+  };
 }
