@@ -1,0 +1,19 @@
+goal: "Plan a simple web app flow"
+
+phases:
+  - name: "Planning"
+    steps:
+      - name: "Define project idea"
+        action: "Think about what the app should do"
+      - name: "Set up repo"
+        action: "Initialize a git repo and add README"
+
+  - name: "Development"
+    steps:
+      - name: "Create basic server"
+        action: "Start with an Express.js server"
+
+  - name: "Testing"
+    steps:
+      - name: "Test locally"
+        action: "Run the server and open in browser"

@@ -1,0 +1,8 @@
+{
+    "maxRetries": 2,
+    "defaultAgents": {
+        "format": "formatCode",
+        "search": "searchRepo",
+        "write": "writeFile"
+    }
+}
