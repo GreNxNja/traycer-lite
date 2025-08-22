@@ -1,19 +1,60 @@
+id: plan-12345
 goal: "Plan a simple web app flow"
-
+context: "Create a basic web application with user authentication and data display"
+createdAt: "2025-08-22T16:00:00.000Z"
 phases:
-  - name: "Planning"
-    steps:
-      - name: "Define project idea"
-        action: "Think about what the app should do"
-      - name: "Set up repo"
-        action: "Initialize a git repo and add README"
-
-  - name: "Development"
-    steps:
-      - name: "Create basic server"
-        action: "Start with an Express.js server"
-
-  - name: "Testing"
-    steps:
-      - name: "Test locally"
-        action: "Run the server and open in browser"
+  - id: discover-phase
+    title: "Discover"
+    tasks:
+      - id: task-1
+        title: "Clarify requirements"
+        description: "Extract constraints, inputs/outputs for the web app"
+        dependsOn: []
+        suggestedAgent: "searchRepo"
+        status: "PENDING"
+        attempts: 0
+      - id: task-2
+        title: "Search codebase"
+        description: "Locate relevant modules & endpoints"
+        dependsOn: []
+        suggestedAgent: "searchRepo"
+        status: "PENDING"
+        attempts: 0
+  
+  - id: design-phase
+    title: "Design"
+    tasks:
+      - id: task-3
+        title: "Propose approach"
+        description: "Outline minimal changes and interfaces"
+        dependsOn: ["task-1", "task-2"]
+        status: "PENDING"
+        attempts: 0
+  
+  - id: implement-phase
+    title: "Implement"
+    tasks:
+      - id: task-4
+        title: "Make changes"
+        description: "Apply code edits per design"
+        dependsOn: ["task-3"]
+        suggestedAgent: "writeFile"
+        status: "PENDING"
+        attempts: 0
+      - id: task-5
+        title: "Format"
+        description: "Format/organize modified files"
+        dependsOn: ["task-4"]
+        suggestedAgent: "formatCode"
+        status: "PENDING"
+        attempts: 0
+  
+  - id: verify-phase
+    title: "Verify"
+    tasks:
+      - id: task-6
+        title: "Smoke test"
+        description: "Run basic checks or validations"
+        dependsOn: ["task-5"]
+        status: "PENDING"
+        attempts: 0
